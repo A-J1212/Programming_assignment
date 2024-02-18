@@ -4,8 +4,21 @@ import numpy as np
 import matplotlib as mp 
 import seaborn as sb 
 import plotly as plt 
+import argparse
+import yaml 
 
+# Load the YAML configuration file
+config_files = ['job_config.yml', 'user_config.yml']
+config = {}
 
+for this_config_file in config_files:
+    with open(this_config_file, 'r') as yamlfile:
+        this_config = yaml.safe_load(yamlfile)
+        config.update(this_config)
+
+#with open('job_config.yml', 'r') as file:
+#   config = yaml.safe_load(file)
+    
 # %% [markdown]
 # # Metadata Review
 # 
@@ -34,7 +47,15 @@ import plotly as plt
 pd.set_option("display.max_columns", None) # to display all columns in a dataset
 
 # 1. Load the data to a single DataFrame
-data = pd.read_csv('Daily shelter overnight occupancy.csv')
+parser = argparse.ArgumentParser(description='Process a file.')
+
+parser.add_argument('filename', type=str, help='The name of the file to process')
+
+args = parser.parse_args()
+file_name = args.filename
+
+#Daily shelter overnight occupancy.csv
+data = pd.read_csv(file_name)
 data
 
 # %% [markdown]
@@ -210,13 +231,16 @@ data_without_bed_capcity_nan
 
 # %%
 #1. Use groupby() to split your data into groups based on one of the columns.
-sector_groups = data.groupby('sector')
+
+group_by_column = config['job_settings']['group_by_column']
+
+sector_groups = data.groupby(group_by_column)
 
 sector_groups['occupancy_rate_beds'].mean()
 
 # %%
 # 2. #Use agg() to apply multiple functions on different columns and create a summary table. Calculating group sums or standardizing data are two examples of possible functions that you can use.
-occupancy_summary = (data.groupby('sector')
+occupancy_summary = (data.groupby(group_by_column)
                      .agg(bed_occupancy_sum = ('occupied_beds', 'sum'),
                          bed_mean_occupancy_rate = ('occupancy_rate_beds', 'mean'),
                          room_occupancy_sum = ('occupied_rooms', 'sum'),
@@ -241,17 +265,25 @@ summary_plot
 #%matplotlib inline 
 import matplotlib.pyplot as mplt
 
+# Extract plot settings from the configuration
+bed_color = config['user_settings']['bed_color']
+grid_color = config['user_settings']['grid_color']
+grid_alpha = config['user_settings']['grid_alpha']
+
 fig, ax = mplt.subplots()
 
+beds = ax.bar(summary_plot['sector'], summary_plot['bed_occupancy_sum'], color=bed_color)
 
-beds = ax.bar(summary_plot['sector'], summary_plot['bed_occupancy_sum'])
+#beds = ax.bar(summary_plot['sector'], summary_plot['bed_occupancy_sum'])
 #rooms = ax.bar(summary_plot['sector'], summary_plot['room_occupancy_sum'])
 ax.set_title('cumulative number of occupied beds for Jan 2024')
 ax.set_xlabel('Sector')
 ax.set_ylabel('Number of Occupied Beds')
 ax.set_axisbelow(True)
 
-ax.grid(alpha = 0.5)
+#ax.grid(alpha = 0.5)
+ax.grid(color=grid_color, alpha=grid_alpha)
+
 ax.legend([beds], ['Beds'],
           bbox_to_anchor = (0,1),
           loc = 'upper left')
@@ -288,7 +320,7 @@ bar_width = 0.35
 # Setting the positions of the bars on the x-axis
 indices = np.arange(len(summary_plot['sector']))
 
-beds = ax.bar(indices - bar_width/2, summary_plot['bed_occupancy_sum'], bar_width, label='Bed Occupancy')
+beds = ax.bar(indices - bar_width/2, summary_plot['bed_occupancy_sum'], bar_width, label='Bed Occupancy', color=bed_color)
 rooms = ax.bar(indices + bar_width/2, summary_plot['room_occupancy_sum'], bar_width, label='Room Occupancy')
 ax.set_title('cumulative number of occupied beds/rooms for Jan 2024')
 ax.set_xlabel('Sector')

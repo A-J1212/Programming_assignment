@@ -1,0 +1,4 @@
+job_settings:
+  group_by_column: "sector"
+
+
