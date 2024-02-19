@@ -6,6 +6,8 @@ import seaborn as sb
 import plotly as plt 
 import argparse
 import yaml 
+import logging
+
 
 # Load the YAML configuration file
 config_files = ['job_config.yml', 'user_config.yml']
@@ -19,43 +21,57 @@ for this_config_file in config_files:
 #with open('job_config.yml', 'r') as file:
 #   config = yaml.safe_load(file)
     
-# %% [markdown]
-# # Metadata Review
-# 
-# 1. What organization publishes this dataset?
-# Shelter, Support & Housing Administration
-# 
-# 2. How frequently is the dataset updated?
-# Daily
-# 
-# 3. What metadata is available (e.g., column names, data types, descriptions)?
-# Column name and description of each column is provided under a rolldown menu " Data features". 
-# 
-# 4. Is there documentation about who or what produces the data? About who collects it? Through what processes?
-# yes
-# 
-# 5. Is there documentation about limitations of the data, such as possible sources of error or omission?
-# yes
-# 
-# 6. Are there any restrictions concerning data access or use? (e.g.,registraton required or non-commercial use only)
-# no
-
-# %% [markdown]
-# ## Getting Started
 
 # %%
 pd.set_option("display.max_columns", None) # to display all columns in a dataset
 
+
+#Load data
+
+# Function to check if the filename ends with .csv
+def check_filename(filename):
+    if not filename.endswith('.csv'):
+        raise ValueError("The filename does not include '.csv'")
+    
 # 1. Load the data to a single DataFrame
 parser = argparse.ArgumentParser(description='Process a file.')
 
 parser.add_argument('filename', type=str, help='The name of the file to process')
-
+parser.add_argument('--verbose', '-v', action ='store_true', help ='Print verbose logs')
 args = parser.parse_args()
+
 file_name = args.filename
 
+#determine logging level based on arguments
+logging_level = logging.INFO
+
+# Initialize logging module
+logging.basicConfig(
+    level=logging_level, 
+    handlers=[logging.StreamHandler(), logging.FileHandler('my_python_analysis.log')],
+)
+
+#check if the filename ends with .csv
+try: 
+    check_filename(file_name)
+except ValueError as e:
+    logging.error(e)
+    raise
+
+
 #Daily shelter overnight occupancy.csv
-data = pd.read_csv(file_name)
+try:
+    data = pd.read_csv(file_name)
+    assert isinstance(data, pd.DataFrame), "data should be a DataFrame"
+    logging.info(f'Loading {file_name}')
+except Exception as e:
+    logging.error(f'Failed to load the file {file_name}: {e}')
+    e.add_note("f'Failed to load the file{file_name}, filename needs to include .csv'")
+    raise
+
+
+
+
 data
 
 # %% [markdown]
@@ -141,8 +157,13 @@ data['SECTOR']
 # %%
 # 7. Convert the data type of at least one of the columns. If all columns are typed correctly, convert one to str and back.
 
-data['OCCUPANCY_DATE'] = pd.to_datetime(data['OCCUPANCY_DATE'])
-data['OCCUPANCY_DATE'] 
+
+from date_conversion_function import convert_date_columns
+convert_date_columns(data)
+
+#old conversion code:
+#data['OCCUPANCY_DATE'] = pd.to_datetime(data['OCCUPANCY_DATE'])
+#data['OCCUPANCY_DATE'] 
 
 # %%
 #7. convert the data type of multiple columns
