@@ -1,0 +1,11 @@
+# Ignore all .cache files
+*.cache
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore all files in the tmp directory
+tmp/
+
+# Ignore a specific file
+secret.txt
