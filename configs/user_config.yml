@@ -1,0 +1,10 @@
+user_settings:
+    bed_color: 'red'
+    grid_color: 'lightgrey'
+    grid_alpha: 0.5
+    plot_title: "cumulative number of occupied beds for Jan 2024 - u"
+    plot_x_title: "sector - u"
+    plot_y_title: "Number of Occupied Beds - u"
+    figsize: '10,6'
+    plot1_save_path: './plots'
+    topicname: "assignmentbrs"

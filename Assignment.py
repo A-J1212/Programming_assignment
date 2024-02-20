@@ -7,10 +7,32 @@ import plotly as plt
 import argparse
 import yaml 
 import logging
+import requests
+
+
+# load github access token from yaml file
+with open('secrets.yml') as f:
+    secrets = yaml.safe_load(f)
+    
+
+# load github access token from yaml file
+with open('secrets.yml') as f:
+    secrets = yaml.safe_load(f)
+    
+# GET /user
+# Authorization: Bearer <YOUR-TOKEN>
+headers = {'Authorization': 'Bearer ' + secrets['key'], 
+           'Accept' : 'application/vnd.github+json'}
+url = 'https://api.github.com/user'
+
+r = requests.get(url, headers=headers) 
+
+print(r)
+
 
 
 # Load the YAML configuration file
-config_files = ['job_config.yml', 'user_config.yml']
+config_files = ['./configs/job_config.yml', './configs/user_config.yml']
 config = {}
 
 for this_config_file in config_files:
@@ -290,16 +312,34 @@ import matplotlib.pyplot as mplt
 bed_color = config['user_settings']['bed_color']
 grid_color = config['user_settings']['grid_color']
 grid_alpha = config['user_settings']['grid_alpha']
+plot_title = config['user_settings']['plot_title']
+plot_x_title = config['user_settings']['plot_x_title']
+plot_y_title = config['user_settings']['plot_y_title']
+plot1_save_path = config['user_settings']['plot1_save_path']
 
-fig, ax = mplt.subplots()
+# Assuming figsize is a string in the format "10, 6"
+figsize_str = config['user_settings']['figsize']
+
+# Convert this string to a tuple of floats
+figsize = tuple(float(num) for num in figsize_str.split(','))
+
+
+#figsize = config['user_settings']['figsize']
+
+
+fig, ax = mplt.subplots(figsize=figsize)
 
 beds = ax.bar(summary_plot['sector'], summary_plot['bed_occupancy_sum'], color=bed_color)
 
 #beds = ax.bar(summary_plot['sector'], summary_plot['bed_occupancy_sum'])
 #rooms = ax.bar(summary_plot['sector'], summary_plot['room_occupancy_sum'])
-ax.set_title('cumulative number of occupied beds for Jan 2024')
-ax.set_xlabel('Sector')
-ax.set_ylabel('Number of Occupied Beds')
+#ax.set_title('cumulative number of occupied beds for Jan 2024')
+#ax.set_xlabel('Sector')
+#ax.set_ylabel('Number of Occupied Beds')
+
+ax.set_title(plot_title)
+ax.set_xlabel(plot_x_title)
+ax.set_ylabel(plot_y_title)
 ax.set_axisbelow(True)
 
 #ax.grid(alpha = 0.5)
@@ -309,7 +349,7 @@ ax.legend([beds], ['Beds'],
           bbox_to_anchor = (0,1),
           loc = 'upper left')
 
-mplt.savefig('occupied_shelter_beds1.png')
+mplt.savefig(plot1_save_path + '/occupied_shelter_beds1.png')
 
 
 # %%
@@ -327,7 +367,7 @@ ax1.set_xticklabels(summary_plot['sector'], rotation=45, ha="right")
 ax2.set_xticklabels(summary_plot['sector'], rotation=45, ha="right")
 
 modefig
-mplt.savefig('occupied_shelter_beds2.png')
+mplt.savefig(plot1_save_path + '/occupied_shelter_beds2.png')
 
 # %%
 #%matplotlib inline 
@@ -353,10 +393,14 @@ ax.grid(alpha=0.5)
 ax.legend()
 
 fig
-mplt.savefig('occupied_shelter_beds3.png')
+mplt.savefig(plot1_save_path + '/occupied_shelter_beds3.png')
 
 
 # %%
 
+topicname = config['user_settings']['topicname']
+message = 'code ran successfully - this is the last command'
 
+requests.post(f"https://ntfy.sh/{topicname}", 
+    data=message.encode(encoding='utf-8'))
 
